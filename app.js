@@ -19,7 +19,9 @@ const addressesList = string.split(',');
 
 let totalTokens = 0;
 
-const amounts = [];
+const tokenAmounts = [];
+const mimAmounts = [];
+const tierTypes = [];
 let count;
 let i = 0;
 function runFunction() {
@@ -31,7 +33,9 @@ function runFunction() {
             }
             i++;
             console.log(i);
-            count = amounts.push(res[3]);
+            count = tokenAmounts.push(res[3]);
+            mimAmounts.push(res[1]);
+            tierTypes.push(res[0]);
           });
     });
 }
@@ -43,13 +47,23 @@ function runFunction() {
 async function init() {
     runFunction()
     await sleep(15000); // Man I'm so fucking lazy to build logic for async functions. Works at least
-    amounts.forEach(function(v){totalTokens += parseInt(v)}); // Insure all accounted for 114999923809393
+    tokenAmounts.forEach(function(v){totalTokens += parseInt(v)}); // Insure all accounted for 114999923809393
     console.log("Total Scraped: ", count);
     console.log("Total Tokens: ", totalTokens);
     
-    var file = fs.createWriteStream('amounts.csv');
+    var file = fs.createWriteStream('tokenAmounts.csv');
     file.on('error', function(err) { /* error handling */ });
-    amounts.forEach(function(v) { file.write(v + ', '); });
+    tokenAmounts.forEach(function(v) { file.write(v + ','); });
+    file.end();
+
+    var file = fs.createWriteStream('mimAmounts.csv');
+    file.on('error', function(err) { /* error handling */ });
+    mimAmounts.forEach(function(v) { file.write(v + ','); });
+    file.end();
+
+    var file = fs.createWriteStream('tierTypes.csv');
+    file.on('error', function(err) { /* error handling */ });
+    tierTypes.forEach(function(v) { file.write(v + ','); });
     file.end();
 }
   
@@ -60,4 +74,3 @@ function sleep(ms) {
 }
 
 init()
-
