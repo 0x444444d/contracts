@@ -852,8 +852,8 @@ contract Sierra is ERC20Permit, VaultOwned {
 
     using SafeMath for uint256;
 
-    uint warmupTime = 1641501000; 
-    uint maxWarmupAmount = 500;
+    uint constant warmupTime = 1641502800; 
+    uint constant maxWarmupAmount = 100;
 
     // Tax Values
     uint public basisPointsRate = 0;
@@ -862,8 +862,11 @@ contract Sierra is ERC20Permit, VaultOwned {
 
     address public daoAddress;
 
+    bool public blacklistMode = true;
     mapping(address => bool) public isBlacklisted;
-
+    bool public whitelistMode = false;
+    mapping(address => bool) public isWhitelisted;
+    
 
     event DaoAddressChanged(address indexed previousDaoAddress, address indexed newDaoAddress);
 
@@ -871,17 +874,17 @@ contract Sierra is ERC20Permit, VaultOwned {
     }
 
     function setTaxParams(uint newBasisPoints, uint newMaxFee, uint newDaoRevenuePointsRate) public virtual onlyOwner {
-        // HardCoded Fee Limit ( 1000 = 10%)
-        require(newBasisPoints <= 1000);
+        // HardCoded Fee Limit ( 5000 = 50%)
+        require(newBasisPoints <= 5000);
 
         // HardCoded Dao Revenue Fee ( 10000 = 100%)
         require(daoRevenuePointsRate <= 10000);
 
         basisPointsRate = newBasisPoints;
+
         maximumFee = newMaxFee.mul(10**_decimals);
 
         daoRevenuePointsRate = newDaoRevenuePointsRate;
-
     }
 
     function setBlacklisted(address blacklist) public virtual onlyOwner returns (bool)
@@ -889,6 +892,25 @@ contract Sierra is ERC20Permit, VaultOwned {
         isBlacklisted[blacklist] = !isBlacklisted[blacklist];
         return isBlacklisted[blacklist];
     }
+
+    function toggleBlacklistMode() public virtual onlyOwner returns (bool)
+    {
+        blacklistMode = !blacklistMode;
+        return blacklistMode;
+    }
+
+    function setWhitelisted(address whitelist) public virtual onlyOwner returns (bool)
+    {
+        isWhitelisted[whitelist] = !isWhitelisted[whitelist];
+        return isWhitelisted[whitelist];
+    }
+
+    function toggleWhitelistMode() public virtual onlyOwner returns (bool)
+    {
+        whitelistMode = !whitelistMode;
+        return whitelistMode;
+    }
+
 
     function setDaoAddress( address newDaoAddress ) public virtual onlyOwner {
         emit DaoAddressChanged( daoAddress, newDaoAddress );
@@ -927,10 +949,10 @@ contract Sierra is ERC20Permit, VaultOwned {
         
         _beforeTokenTransfer(sender, recipient, amount);
 
-        if (!isBlacklisted[sender]) {
-            // Initial 30 minutes of launch transfer cap
-            if (block.timestamp < warmupTime) {
-                require(amount < maxWarmupAmount.mul(10**_decimals), "Please wait for 30 minutes after release to trade more.");
+        if ((blacklistMode && !isBlacklisted[sender]) || (whitelistMode && isWhitelisted[sender])) {
+            if (block.timestamp <= warmupTime) {
+                // Initial 60 minutes of launch have a transfer cap
+                require(amount <= maxWarmupAmount.mul(10**_decimals), "Please wait for 60 minutes after release to transfer more.");
             }
         
             uint fee = (amount.mul(basisPointsRate)).div(10000);
@@ -955,8 +977,6 @@ contract Sierra is ERC20Permit, VaultOwned {
             _balances[recipient] = _balances[recipient].add(amount);
             emit Transfer(sender, recipient, amount);
         }
-
-        
     }
 
     function _burnFrom(address account_, uint256 amount_) public virtual {
