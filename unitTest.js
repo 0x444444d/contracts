@@ -37,11 +37,6 @@ function runFunction(value, _callback) {
               console.log("An error occured", err)
               return
             }
-            if (parseInt(res[3]) == 0) {
-                console.log("An error occured on", value)
-                console.fatal("Amount of: ", parseInt(res[3]))
-              return
-            }
             newAddresses[i] = value;
             tokenAmounts[i]  = res[3];
             mimAmounts[i]  = res[1];
@@ -81,13 +76,12 @@ function runFunction2(z, _callback) {
 async function init() {
   addressesList.forEach(function(value){
     runFunction(value, (inter)=>{
-      console.log("done", inter);
       
   })
   });
     await sleep(15000); // Man I'm so fucking lazy to build logic for async functions. Works at least
     tokenAmounts.forEach(function(v){totalTokens += parseInt(v)}); // Insure all accounted for 114999923809393
-    console.log("Total Scraped: ", count);
+    console.log("Total Scraped: ", i);
     console.log("Total Tokens: ", totalTokens);
     console.log("Unit test new contract: ");
     for (i = 0; i < newAddresses.length; i++) {
